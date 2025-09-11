@@ -1,3 +1,4 @@
+// Main Dashboard
 import React, { useState, useEffect } from 'react';
 import { SpaceButton } from '@/components/ui/space-button';
 import { Card } from '@/components/ui/card';
@@ -13,8 +14,12 @@ import {
   Beaker,
   Users,
   Award,
-  Star
+  Star,
+  BeakerIcon
 } from 'lucide-react';
+import { error } from 'console';
+import { supabase } from '@/integrations/supabase/client';
+import { stat } from 'fs';
 
 interface DashboardProps {
   user: any;
@@ -22,15 +27,17 @@ interface DashboardProps {
   onStartQuiz: (subject: string) => void;
 }
 
+const iconMap = {
+  // For mappying db icon names to lucid icons
+  "Beaker": BeakerIcon,
+  "Calculator": Calculator,
+  "BookOpen": BookOpen,
+};
 const Dashboard: React.FC<DashboardProps> = ({ user, preferences, onStartQuiz }) => {
   const [points, setPoints] = useState(420);
   const [streak, setStreak] = useState(7);
   const [level, setLevel] = useState(5);
-  const [mascotMessage, setMascotMessage] = useState(
-    `Welcome back, ${user.name}! Ready for today's cosmic mission?`
-  );
-
-  const subjectData = [
+  const [subjectData , setsubjectData] = useState([
     { 
       name: 'Science', 
       icon: Beaker, 
@@ -58,13 +65,17 @@ const Dashboard: React.FC<DashboardProps> = ({ user, preferences, onStartQuiz })
       nextLevel: 'Creative Writing',
       points: 180
     }
-  ];
-
-  const dailyMissions = [
+  ]);
+  const [dailyMissions , setDailyMission] = useState([
     { task: 'Complete 3 Science questions', progress: 2, total: 3, reward: 50 },
     { task: 'Solve 5 Math problems', progress: 1, total: 5, reward: 75 },
     { task: 'Read 2 English stories', progress: 0, total: 2, reward: 40 }
-  ];
+  ]);
+  const [mascotMessage, setMascotMessage] = useState(
+    `Welcome back, ${user.name}! Ready for today's cosmic mission?`
+  );
+
+
 
   const leaderboard = [
     { rank: 1, name: 'Cosmic Explorer', points: 2840, avatar: '🚀' },
@@ -75,12 +86,66 @@ const Dashboard: React.FC<DashboardProps> = ({ user, preferences, onStartQuiz })
   ];
 
   useEffect(() => {
+    const fetchDashboardData = async() => {
+      try {
+        let token = await supabase.auth.getSession()
+        let apitoken = token.data.session.access_token
+        const response = await fetch(`http://127.0.0.1:8000/load?token=${apitoken}`,{
+          method : 'POST',
+          headers: {
+                'content-type': 'application/json',
+          }
+        });
+        const result = await response.json();
+        setPoints(result.points);
+        setStreak(result.streak);
+        setLevel(result.level);
+        console.log(result)
+        let updatedsubjectData = []
+        let statement = ["Complete 3 Science questions" , "Solve 5 Math problems" , "Read 2 English stories"]
+        let totalprog = [2,5,2]
+        for(let i =0 ;i < result.course.length;i++){
+          let temp_subject = {
+            name : result.course[i].course_name,
+            icon : iconMap[result.course[i].icon],
+            progress : Number(result.course[i].completed_lessons) *100 / Number(result.course[i].total_lesson),
+            color : ["text-primary","text-secondary","text-accent"][i],
+            bgColor : ['bg-primary/10','bg-secondary/10','bg-accent/10'][i],
+            nextLevel : result.course[i].next_level,
+            points : Number(result.course[i].total_lesson * 10)
+          }
+          updatedsubjectData.push(temp_subject)
+        }
+        // Updating daily mission
+        let updatedmission = []
+        for (let i=0;i<3;i++){
+          let temp = {
+            task : statement[i],
+            process : Number(result.daily_mission.missions[i].progress),
+            total : totalprog[i],
+            reward : totalprog[i] * 10
+          }
+          updatedmission.push(temp);
+        }
+
+        setDailyMission(updatedmission)
+        
+        console.log(updatedsubjectData)
+        setsubjectData(updatedsubjectData)
+      }
+      catch(error){
+        console.log("Error Loading Dashboard",error)
+      }
+    }
+
+    fetchDashboardData()
     const messages = [
       "The cosmos is full of knowledge waiting to be discovered!",
       "Every question you answer makes you a stronger explorer!",
       "Your curiosity is your greatest superpower!",
       "Ready to unlock new galaxies of learning?"
     ];
+    
     
     const interval = setInterval(() => {
       setMascotMessage(messages[Math.floor(Math.random() * messages.length)]);

@@ -8,6 +8,9 @@ import type { User, Session } from '@supabase/supabase-js';
 
 type AppState = 'splash' | 'auth' | 'questionnaire' | 'dashboard' | 'quiz';
 
+let f = async() =>{
+  let ans = await supabase.auth.getSession();
+}
 const Index = () => {
   const [appState, setAppState] = useState<AppState>('splash');
   const [user, setUser] = useState<User | null>(null);
@@ -22,14 +25,39 @@ const Index = () => {
       (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
+
+        
         
         if (session?.user) {
           // User is authenticated, move to questionnaire if no preferences
-          if (!preferences) {
+          const update = async() =>{
+            if (!preferences) {
             setAppState('questionnaire');
           } else {
             setAppState('dashboard');
           }
+          }
+          const fetch_data = async() =>{
+            let token = await supabase.auth.getSession()
+            let apitoken  = token.data.session.access_token  
+            const result = await  fetch(`http://127.0.0.1:8000/test?token=${apitoken}`,{
+              method : "POST",
+              headers: {
+                'content-type': 'application/json',
+              }
+            })
+            const ans = await result.json()
+            setPreferences(ans.ans)
+            if(!(ans.ans)){
+              setAppState('questionnaire')
+            }
+            else{
+              setAppState('dashboard')
+            }
+          }
+
+          fetch_data() 
+          
         } else {
           // User is not authenticated, show auth screen after splash
           if (appState !== 'splash') {
@@ -59,7 +87,9 @@ const Index = () => {
   };
 
   const handleAuthComplete = (userData: any) => {
-    setAppState('questionnaire');
+    const { isSignup } = userData;
+    
+    setAppState(isSignup ? 'questionnaire' : 'dashboard');
   };
 
   const handleQuestionnaireComplete = (userPreferences: any) => {

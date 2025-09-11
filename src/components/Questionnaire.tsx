@@ -1,3 +1,4 @@
+// This is for question part 
 import React, { useState } from 'react';
 import { SpaceButton } from '@/components/ui/space-button';
 import { Card } from '@/components/ui/card';
@@ -5,6 +6,8 @@ import { Label } from '@/components/ui/label';
 import AstronautMascot from './AstronautMascot';
 import SpaceBackground from './SpaceBackground';
 import { GraduationCap, BookOpen, Brain } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { Session } from 'inspector/promises';
 
 interface QuestionnaireProps {
   onComplete: (preferences: any) => void;
@@ -58,10 +61,38 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onComplete, userName }) =
     }));
   };
 
-  const handleLevelSelect = (level: string) => {
+  const handleLevelSelect = async(level: string) => {
     setPreferences(prev => ({ ...prev, level }));
     setMascotMessage("Excellent! Your personalized space academy is ready. Let's begin the adventure!");
+    let token = await supabase.auth.getSession()
+    const apitoken = {"token" :  token.data.session.access_token,"grade_level" : level , "subjects" : preferences.subjects , "skill_level" : preferences.class};
+    console.log("Preference",apitoken)
+
+
+    // --------------------------------------
+    // Data you want to send
+
     
+
+  try {
+    const response = await fetch("http://127.0.0.1:8000/create_user", {
+      method: "POST",               // POST request
+      headers: {
+        "Content-Type": "application/json"  // Tell server it's JSON
+      },
+      body: JSON.stringify(apitoken)     // Convert JS object to JSON string
+      
+    });
+    // const { error } = await supabase.auth.signOut();
+    // console.log("Signing Out")
+
+    const result = await response.json();   // Parse JSON response
+    console.log("Server response:", result);
+
+  } catch (error) {
+    console.error("Error sending POST request:", error);
+  }
+    // ----------------------------------------
     setTimeout(() => {
       onComplete({ ...preferences, level });
     }, 2000);

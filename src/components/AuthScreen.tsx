@@ -1,3 +1,4 @@
+// This is login page
 import React, { useState } from 'react';
 import { SpaceButton } from '@/components/ui/space-button';
 import { Input } from '@/components/ui/input';
@@ -50,7 +51,8 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthComplete }) => {
         onAuthComplete({
           name: data.user?.user_metadata?.name || 'Space Explorer',
           email: data.user?.email,
-          phone: data.user?.user_metadata?.phone
+          phone: data.user?.user_metadata?.phone,
+          isSignup: false
         });
       } else {
         // Sign up new user
@@ -69,6 +71,9 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthComplete }) => {
         });
 
         if (error) throw error;
+        if (data.session?.access_token) {
+          localStorage.setItem("access_token", data.session.access_token);
+        }
 
         if (data.user && !data.session) {
           setMascotMessage("Check your email for verification link, Explorer! 📧");
@@ -81,7 +86,8 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthComplete }) => {
           onAuthComplete({
             name: formData.name,
             email: formData.email,
-            phone: formData.phone
+            phone: formData.phone,
+            isSignup: true
           });
         }
       }
