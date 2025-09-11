@@ -20,6 +20,7 @@ import {
 import { error } from 'console';
 import { supabase } from '@/integrations/supabase/client';
 import { stat } from 'fs';
+import { Avatar } from '@radix-ui/react-avatar';
 
 interface DashboardProps {
   user: any;
@@ -71,19 +72,21 @@ const Dashboard: React.FC<DashboardProps> = ({ user, preferences, onStartQuiz })
     { task: 'Solve 5 Math problems', progress: 1, total: 5, reward: 75 },
     { task: 'Read 2 English stories', progress: 0, total: 2, reward: 40 }
   ]);
+  const [userName,setUserName] = useState(user.name)
   const [mascotMessage, setMascotMessage] = useState(
-    `Welcome back, ${user.name}! Ready for today's cosmic mission?`
+    `Welcome back, ${userName}! Ready for today's cosmic mission?`
   );
 
 
 
-  const leaderboard = [
+
+  const [leaderboard,setLeaderboard] = useState([
     { rank: 1, name: 'Cosmic Explorer', points: 2840, avatar: '🚀' },
     { rank: 2, name: 'Star Navigator', points: 2650, avatar: '⭐' },
-    { rank: 3, name: user.name, points: points, avatar: '🌟' },
+    { rank: 3, name: userName, points: points, avatar: '🌟' },
     { rank: 4, name: 'Galaxy Traveler', points: 2380, avatar: '🛸' },
     { rank: 5, name: 'Space Pioneer', points: 2200, avatar: '🌌' }
-  ];
+  ]);
 
   useEffect(() => {
     const fetchDashboardData = async() => {
@@ -100,6 +103,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, preferences, onStartQuiz })
         setPoints(result.points);
         setStreak(result.streak);
         setLevel(result.level);
+        setUserName(result.name);
         console.log(result)
         let updatedsubjectData = []
         let statement = ["Complete 3 Science questions" , "Solve 5 Math problems" , "Read 2 English stories"]
@@ -127,10 +131,20 @@ const Dashboard: React.FC<DashboardProps> = ({ user, preferences, onStartQuiz })
           }
           updatedmission.push(temp);
         }
+        let updatedrank = [];
+        let avatarArr = ['🚀','⭐','🌟','🛸','🌌']
+        for (let i =0 ; i<result.rank.length ; i++){
+          let currrank = {
+            rank : result.rank[i].rank,
+            name : result.rank[i].name,
+            points : result.rank[i].points,
+            avatar : avatarArr[i] 
+          }
+          updatedrank.push(currrank);
+        }
+        setLeaderboard(updatedrank);
 
         setDailyMission(updatedmission)
-        
-        console.log(updatedsubjectData)
         setsubjectData(updatedsubjectData)
       }
       catch(error){
@@ -173,7 +187,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, preferences, onStartQuiz })
             Mission Control Center
           </h1>
           <p className="text-muted-foreground">
-            Welcome back, Space Explorer {user.name}!
+            Welcome back, Space Explorer {userName}!
           </p>
         </div>
 
@@ -283,7 +297,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, preferences, onStartQuiz })
               <div 
                 key={player.rank}
                 className={`flex items-center p-3 rounded-lg transition-all ${
-                  player.name === user.name 
+                  player.name === userName 
                     ? 'bg-primary/20 border border-primary/30' 
                     : 'bg-muted/10'
                 }`}

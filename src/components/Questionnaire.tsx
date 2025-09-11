@@ -65,7 +65,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onComplete, userName }) =
     setPreferences(prev => ({ ...prev, level }));
     setMascotMessage("Excellent! Your personalized space academy is ready. Let's begin the adventure!");
     let token = await supabase.auth.getSession()
-    const apitoken = {"token" :  token.data.session.access_token,"grade_level" : level , "subjects" : preferences.subjects , "skill_level" : preferences.class};
+    const apitoken = {"token" :  token.data.session.access_token,"grade_level" : level , "subjects" : preferences.subjects , "skill_level" : preferences.class , "name" : userName};
     console.log("Preference",apitoken)
 
 
